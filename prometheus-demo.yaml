@@ -1,6 +1,3 @@
-# --------------------------------------
-# Java Spring Boot APM demo
-# --------------------------------------
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,22 +24,5 @@ spec:
           env:
             - name: JAVA_OPTS
               value: "-Dserver.port=8080"
-      # Secret for GitHub Container Registry
       imagePullSecrets:
         - name: ghcr-secret
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: apm-demo
-  namespace: demo
-  labels:
-    app: apm-demo
-spec:
-  ports:
-    - port: 8080
-      targetPort: 8080
-      protocol: TCP
-      name: http
-  selector:
-    app: apm-demo
