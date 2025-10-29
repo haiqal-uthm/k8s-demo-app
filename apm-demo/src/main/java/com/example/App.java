@@ -4,6 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,10 +26,14 @@ public class App {
     @GetMapping("/")
     public Map<String, Object> home() {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "🚀 Welcome to the Enhanced Spring Boot APM Demo!");
+        response.put("message", "🚀 Welcome to the Enhanced Spring Boot APM Demo with Session Management!");
         response.put("timestamp", LocalDateTime.now());
-        response.put("version", "2.0");
-        response.put("endpoints", Arrays.asList("/health", "/quote", "/counter", "/user/{name}", "/calculate"));
+        response.put("version", "2.1");
+        response.put("endpoints", Arrays.asList(
+            "/health", "/quote", "/counter", "/user/{name}", "/calculate", "/random",
+            "/session/info", "/session/set", "/session/get/{key}", "/session/all", 
+            "/session/remove/{key}", "/session/invalidate"
+        ));
         return response;
     }
     
@@ -130,6 +136,98 @@ public class App {
     private String getRandomColor() {
         String[] colors = {"Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "Cyan"};
         return colors[ThreadLocalRandom.current().nextInt(colors.length)];
+    }
+    
+    // Session-based endpoints
+    @GetMapping("/session/info")
+    public Map<String, Object> getSessionInfo(HttpSession session, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessionId", session.getId());
+        response.put("sessionCreated", new Date(session.getCreationTime()));
+        response.put("sessionLastAccessed", new Date(session.getLastAccessedTime()));
+        response.put("sessionMaxInactiveInterval", session.getMaxInactiveInterval());
+        response.put("sessionIsNew", session.isNew());
+        response.put("timestamp", LocalDateTime.now());
+        return response;
+    }
+    
+    @PostMapping("/session/set")
+    public Map<String, Object> setSessionAttribute(@RequestBody Map<String, String> request, HttpSession session) {
+        String key = request.get("key");
+        String value = request.get("value");
+        
+        if (key != null && value != null) {
+            session.setAttribute(key, value);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Session attribute set successfully");
+            response.put("key", key);
+            response.put("value", value);
+            response.put("sessionId", session.getId());
+            response.put("timestamp", LocalDateTime.now());
+            return response;
+        } else {
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", "Both 'key' and 'value' are required");
+            return response;
+        }
+    }
+    
+    @GetMapping("/session/get/{key}")
+    public Map<String, Object> getSessionAttribute(@PathVariable String key, HttpSession session) {
+        Object value = session.getAttribute(key);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("key", key);
+        response.put("value", value);
+        response.put("sessionId", session.getId());
+        response.put("found", value != null);
+        response.put("timestamp", LocalDateTime.now());
+        return response;
+    }
+    
+    @GetMapping("/session/all")
+    public Map<String, Object> getAllSessionAttributes(HttpSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+        Enumeration<String> attributeNames = session.getAttributeNames();
+        
+        while (attributeNames.hasMoreElements()) {
+            String attributeName = attributeNames.nextElement();
+            attributes.put(attributeName, session.getAttribute(attributeName));
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessionId", session.getId());
+        response.put("attributes", attributes);
+        response.put("attributeCount", attributes.size());
+        response.put("timestamp", LocalDateTime.now());
+        return response;
+    }
+    
+    @DeleteMapping("/session/remove/{key}")
+    public Map<String, Object> removeSessionAttribute(@PathVariable String key, HttpSession session) {
+        Object removedValue = session.getAttribute(key);
+        session.removeAttribute(key);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Session attribute removed");
+        response.put("key", key);
+        response.put("removedValue", removedValue);
+        response.put("sessionId", session.getId());
+        response.put("timestamp", LocalDateTime.now());
+        return response;
+    }
+    
+    @DeleteMapping("/session/invalidate")
+    public Map<String, Object> invalidateSession(HttpSession session) {
+        String sessionId = session.getId();
+        session.invalidate();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Session invalidated successfully");
+        response.put("invalidatedSessionId", sessionId);
+        response.put("timestamp", LocalDateTime.now());
+        return response;
     }
 
     public static void main(String[] args) {

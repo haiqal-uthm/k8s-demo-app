@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Management Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 8px 15px; margin: 5px; cursor: pointer; }
+        .response { background-color: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; white-space: pre-wrap; }
+        input[type="text"] { padding: 5px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Spring Boot Session Management Demo</h1>
+        
+        <div class="section">
+            <h3>Session Information</h3>
+            <button onclick="getSessionInfo()">Get Session Info</button>
+            <div id="session-info-response" class="response"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Set Session Attribute</h3>
+            <input type="text" id="set-key" placeholder="Key" />
+            <input type="text" id="set-value" placeholder="Value" />
+            <button onclick="setSessionAttribute()">Set Attribute</button>
+            <div id="set-response" class="response"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Get Session Attribute</h3>
+            <input type="text" id="get-key" placeholder="Key" />
+            <button onclick="getSessionAttribute()">Get Attribute</button>
+            <div id="get-response" class="response"></div>
+        </div>
+        
+        <div class="section">
+            <h3>All Session Attributes</h3>
+            <button onclick="getAllAttributes()">Get All Attributes</button>
+            <div id="all-response" class="response"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Remove Session Attribute</h3>
+            <input type="text" id="remove-key" placeholder="Key" />
+            <button onclick="removeSessionAttribute()">Remove Attribute</button>
+            <div id="remove-response" class="response"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Session Management</h3>
+            <button onclick="invalidateSession()">Invalidate Session</button>
+            <div id="invalidate-response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+
+        async function apiCall(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    credentials: 'include',
+                    ...options
+                });
+                const data = await response.json();
+                return JSON.stringify(data, null, 2);
+            } catch (error) {
+                return `Error: ${error.message}`;
+            }
+        }
+
+        async function getSessionInfo() {
+            const result = await apiCall(`${baseUrl}/session/info`);
+            document.getElementById('session-info-response').textContent = result;
+        }
+
+        async function setSessionAttribute() {
+            const key = document.getElementById('set-key').value;
+            const value = document.getElementById('set-value').value;
+            
+            if (!key || !value) {
+                document.getElementById('set-response').textContent = 'Please enter both key and value';
+                return;
+            }
+            
+            const result = await apiCall(`${baseUrl}/session/set`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ key, value })
+            });
+            document.getElementById('set-response').textContent = result;
+        }
+
+        async function getSessionAttribute() {
+            const key = document.getElementById('get-key').value;
+            
+            if (!key) {
+                document.getElementById('get-response').textContent = 'Please enter a key';
+                return;
+            }
+            
+            const result = await apiCall(`${baseUrl}/session/get/${key}`);
+            document.getElementById('get-response').textContent = result;
+        }
+
+        async function getAllAttributes() {
+            const result = await apiCall(`${baseUrl}/session/all`);
+            document.getElementById('all-response').textContent = result;
+        }
+
+        async function removeSessionAttribute() {
+            const key = document.getElementById('remove-key').value;
+            
+            if (!key) {
+                document.getElementById('remove-response').textContent = 'Please enter a key';
+                return;
+            }
+            
+            const result = await apiCall(`${baseUrl}/session/remove/${key}`, {
+                method: 'DELETE'
+            });
+            document.getElementById('remove-response').textContent = result;
+        }
+
+        async function invalidateSession() {
+            const result = await apiCall(`${baseUrl}/session/invalidate`, {
+                method: 'DELETE'
+            });
+            document.getElementById('invalidate-response').textContent = result;
+        }
+
+        // Auto-load session info on page load
+        window.onload = function() {
+            getSessionInfo();
+        };
+    </script>
+</body>
+</html>
